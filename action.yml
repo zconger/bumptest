@@ -1,4 +1,4 @@
-name: 'Bump Tester'
+name: 'StackHawk HawkScan Action'
 description: 'Find security bugs in your application with HawkScan DAST'
 author: 'Zachary Conger'
 
