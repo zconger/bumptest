@@ -1,0 +1,39 @@
+name: 'Bump Tester'
+description: 'Find security bugs in your application with HawkScan DAST'
+author: 'Zachary Conger'
+
+inputs:
+  apiKey:
+    description: StackHawk API key
+    required: true
+  dryRun:
+    description: If set to `true`, show HawkScan commands, but don't run them
+    required: false
+    default: false
+  environmentVariables:
+    description: Space-separated list of environment variables to pass to HawkScan
+    required: false
+  configurationFiles:
+    description: Space-separated list of HawkScan configuration files to use
+    required: false
+    default: stackhawk.yml
+  network:
+    description: Docker network type or bridge name to use for scan
+    required: false
+    default: host
+  image:
+    description: HawkScan Docker image to use
+    required: false
+    default: stackhawk/hawkscan
+  version:
+    description: HawkScan Docker image version to use
+    required: false
+    default: latest
+
+runs:
+  using: node12
+  main: dist/index.js
+
+branding:
+  icon: 'hexagon'
+  color: '#00c4be'
