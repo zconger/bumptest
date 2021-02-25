@@ -6,9 +6,6 @@ VERSION_PART="patch"
 PUSH=true
 TAG=true
 RELEASE=true
-BUMP_CMD=""
-PUSH_CMD=""
-GH_CMD=""
 USAGE_SUMMARY="$(basename "${0}") [VERSION_PART] [--no-commit] [--no-tag] [--no-push] [--dry-run] [--no-release] [--help]"
 
 function synopsis() {
@@ -79,6 +76,7 @@ function parse_args() {
         ;;
       -d|--dry-run)
         BUMP_ARGS+=("--dry-run")
+        BUMP_ARGS+=("--verbose")
         shift
         ;;
       -np|--no-push)
@@ -103,10 +101,27 @@ function parse_args() {
   done
 }
 
-function summarize_plan() {
-  echo "Congratulations. This script is about to run the following commands:"
-  echo "Check the plan above. Hit return to continue, or <ctrl>-c to bail."
-  pause
+function execute() {
+  mode=${1}
+  if [[ ${mode} == "plan" ]]; then
+    echo "Congratulations. This script is about to run the following commands:"
+  elif [[ ${mode} == "run" ]]; then
+    echo "Here we go!"
+  else
+    >&2 echo "ERROR: This shouldn't happen"
+    exit 1
+  fi
+
+  # Here's the plan:
+  package_prep "${mode}"
+  bump_version "${mode}"
+  git_push "${mode}"
+#  gh_release "${mode}"
+
+  if [[ ${mode} == "plan" ]]; then
+    echo "Check the plan above. Hit return to continue, or <ctrl>-c to bail."
+    read -r
+  fi
 }
 
 function check_deps() {
@@ -128,40 +143,53 @@ function git_pull() {
 }
 
 function package_prep() {
-  echo "Running 'npm run all'..."
-  if ! npm run all ; then
-    >&2 echo "ERROR: 'npm run all' failed."
-    exit 1
-  fi
+  mode=${1}
+  cmd="npm run all"
+  run "${cmd}" "${mode}"
 }
 
 function bump_version() {
-  echo "Running 'bump2version'..."
-  bump_cmd="bump2version ${VERSION_PART} ${BUMP_ARGS[*]}"
-  echo "${bump_cmd}"
+  mode=${1}
+  cmd="bump2version ${BUMP_ARGS[*]} ${VERSION_PART}"
+  run "${cmd}" "${mode}"
 }
 
 function git_push() {
+  mode=${1}
   if [[ $PUSH == "true" ]]; then
-    echo "git push"
+    cmd="git push"
+    run "${cmd}" "${mode}"
     if [[ $TAG == "true" ]]; then
-      echo "git push --tags"
+      cmd="git push --tags"
+      run "${cmd}" "${mode}"
     fi
   fi
 }
 
-function pause() {
-  read -r
+function gh_release() {
+  mode=${1}
+  cmd="gh release create ${BUMP_ARGS[*]} ${VERSION_PART}"
 }
 
+function run() {
+  cmd=${1}
+  mode=${2}
+  echo "Run: '${cmd}'"
+  if [[ ${mode} == "run" ]]; then
+    if ! ${cmd} ; then
+      >&2 echo "ERROR: '${cmd}' failed."
+      exit 1
+    fi
+  fi
+}
+
+# The things
 function main() {
   parse_args "$@"
   check_deps
   git_pull
-  summarize_plan
-  package_prep
-  bump_version
-  git_push
+  execute plan
+  execute run
 }
 
 # Do the things
