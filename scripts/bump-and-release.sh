@@ -201,7 +201,7 @@ function git_push() {
 
 function gh_pr() {
   mode=${1}
-  cmd="gh pr create --base main --title \"Bump version: ${CURRENT_VERSION} → ${NEW_VERSION} \" --body \"Upgrade from version ${CURRENT_VERSION} to ${NEW_VERSION}\""
+  cmd="gh pr create --base main --title \"Bump version: ${CURRENT_VERSION} → ${NEW_VERSION}\" --body \"Upgrade from version ${CURRENT_VERSION} to ${NEW_VERSION}\""
   run "${cmd}" "${mode}"
 }
 
@@ -215,7 +215,7 @@ function run() {
   mode=${2}
   echo "Run: '${cmd}'"
   if [[ ${mode} == "run" ]]; then
-    if ! ${cmd}; then
+    if ! "${cmd}"; then
       echo >&2 "ERROR: '${cmd}' failed."
       exit 1
     fi
