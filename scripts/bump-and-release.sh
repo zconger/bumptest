@@ -2,7 +2,6 @@
 
 # Declare variables
 declare -a BUMP_ARGS
-VERSION_PART="patch"
 PUSH=true
 TAG=true
 RELEASE=true
@@ -100,6 +99,10 @@ function parse_args() {
       ;;
     esac
   done
+
+  if [[ -z "${VERSION_PART}" ]]; then
+    VERSION_PART="patch"
+  fi
 }
 
 function planner() {
