@@ -159,6 +159,11 @@ function check_repo() {
   fi
 }
 
+function check_version() {
+  bump_list=$(bump_version --dry-run --list)
+  echo "${bump_list}"
+}
+
 function git_pull() {
   echo "Pulling any remote commits..."
   cmd="git pull"
@@ -173,7 +178,7 @@ function package_prep() {
 
 function bump_version() {
   mode=${1}
-  cmd="bump2version ${BUMP_ARGS[*]} ${VERSION_PART}"
+  cmd="bump2version ${*} ${BUMP_ARGS[*]} ${VERSION_PART}"
   run "${cmd}" "${mode}"
 }
 
@@ -212,6 +217,7 @@ function main() {
   check_deps
   check_repo
   git_pull
+  check_version
   planner plan
   planner run
 }
