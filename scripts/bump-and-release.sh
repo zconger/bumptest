@@ -118,7 +118,7 @@ function planner() {
   package_prep "${mode}"
   bump_version "${mode}"
   git_push "${mode}"
-  #  gh_release "${mode}"
+  gh_pr "${mode}"
 
   if [[ ${mode} == "plan" ]]; then
     echo "Check the plan above. Hit return to continue, or <ctrl>-c to bail."
@@ -199,10 +199,16 @@ function git_push() {
   fi
 }
 
-function gh_release() {
+function gh_pr() {
   mode=${1}
-  cmd="gh release create "
+  cmd="gh pr create --base main --title \"Bump version: ${CURRENT_VERSION} → ${NEW_VERSION} \" --body \"Upgrade from version ${CURRENT_VERSION} to ${NEW_VERSION}\""
+  run "${cmd}" "${mode}"
 }
+
+#function gh_release() {
+#  mode=${1}
+#  cmd="gh release create "
+#}
 
 function run() {
   cmd=${1}
