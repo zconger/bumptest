@@ -3,11 +3,13 @@
 # Declare variables
 declare -a BUMP_ARGS
 VERSION_PART="patch"
-PUSH=0
+PUSH=true
+TAG=true
+RELEASE=true
 BUMP_CMD=""
 PUSH_CMD=""
 GH_CMD=""
-USAGE_SUMMARY="$(basename "${0}") [VERSION_PART] [--no-commit] [--no-tag] [--no-push] [--dry-run] [--help]"
+USAGE_SUMMARY="$(basename "${0}") [VERSION_PART] [--no-commit] [--no-tag] [--no-push] [--dry-run] [--no-release] [--help]"
 
 function synopsis() {
   if [[ -n "${ERROR}" ]]; then
@@ -26,11 +28,12 @@ function help() {
   cat <<EOF
 Usage: ${USAGE_SUMMARY}
   VERSION_PART      Which part of the version to bump. Must be one of major, minor, or patch. [Default: patch]
-  -nc | --no-commit  Do not commit after bumping the version. Implies '--no-tag' and '--no-push'.
-  -nt | --no-tag     Do not tag after bumping.
-  -np | --no-push    Do not push after bumping the version and committing the change.
-  -d | --dry-run    Explain what will be done, but make no changes to the version, do not commit, and do not push.
-  -h | --help       Print this usage guide.
+  -nc | --no-commit   Do not commit after bumping the version. Implies '--no-tag' and '--no-push'.
+  -nt | --no-tag      Do not tag after bumping.
+  -np | --no-push     Do not push after bumping the version and committing the change.
+  -nr | --no-release  Do not cut a GitHub release
+  -d | --dry-run      Explain what will be done, but make no changes to the version, do not commit, and do not push.
+  -h | --help         Print this usage guide.
 
 $(basename "${0}") prepares this repository for a version release. It performs the following tasks:
  - Checks to make sure the repo is clean and up to date with the origin
@@ -62,10 +65,16 @@ function parse_args() {
         ;;
       -nc|--no-commit)
         BUMP_ARGS+=("--no-commit")
+        BUMP_ARGS+=("--no-tag")
+        TAG=false
+        PUSH=false
+        RELEASE=false
         shift
         ;;
       -nt|--no-tag)
         BUMP_ARGS+=("--no-tag")
+        TAG=false
+        RELEASE=false
         shift
         ;;
       -d|--dry-run)
@@ -73,7 +82,12 @@ function parse_args() {
         shift
         ;;
       -np|--no-push)
-        PUSH=1
+        PUSH=false
+        RELEASE=false
+        shift
+        ;;
+      -nr|--no-release)
+        RELEASE=false
         shift
         ;;
       -h|--help)
@@ -91,18 +105,49 @@ function parse_args() {
 
 function summarize_plan() {
   echo "Congratulations. This script is about to run the following commands:"
+  echo "Check the plan above. Hit return to continue, or <ctrl>-c to bail."
+  pause
 }
 
 function check_deps() {
-  echo "Checking dependencies"
+  echo "Checking dependencies..."
+  for prereq in gh bump2version; do
+    if ! command -v "${prereq}" > /dev/null; then
+      >&2 echo "ERROR: Prerequisite '${prereq}' not found."
+      exit 1
+    fi
+  done
 }
 
 function git_pull() {
-  echo "git pull"
+  echo "Running 'git pull'..."
+  if ! git pull ; then
+    >&2 echo "ERROR: 'git pull' failed."
+    exit 1
+  fi
 }
 
 function package_prep() {
-  echo "npm run all"
+  echo "Running 'npm run all'..."
+  if ! npm run all ; then
+    >&2 echo "ERROR: 'npm run all' failed."
+    exit 1
+  fi
+}
+
+function bump_version() {
+  echo "Running 'bump2version'..."
+  bump_cmd="bump2version ${VERSION_PART} ${BUMP_ARGS[*]}"
+  echo "${bump_cmd}"
+}
+
+function git_push() {
+  if [[ $PUSH == "true" ]]; then
+    echo "git push"
+    if [[ $TAG == "true" ]]; then
+      echo "git push --tags"
+    fi
+  fi
 }
 
 function pause() {
@@ -112,12 +157,11 @@ function pause() {
 function main() {
   parse_args "$@"
   check_deps
-  summarize_plan
-  pause
   git_pull
+  summarize_plan
   package_prep
-  bump_version --dry-run
-
+  bump_version
+  git_push
 }
 
 # Do the things
