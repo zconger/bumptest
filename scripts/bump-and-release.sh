@@ -10,7 +10,7 @@ USAGE_SUMMARY="$(basename "${0}") [VERSION_PART] [--no-commit] [--no-tag] [--no-
 
 function synopsis() {
   if [[ -n "${ERROR}" ]]; then
-    >&2 echo "${ERROR}"
+    echo >&2 "${ERROR}"
   fi
   cat <<EOF
 Usage:    ${USAGE_SUMMARY}
@@ -20,7 +20,7 @@ EOF
 
 function help() {
   if [[ -n "${ERROR}" ]]; then
-    >&2 echo "ERROR: ${ERROR}"
+    echo >&2 "ERROR: ${ERROR}"
   fi
   cat <<EOF
 Usage: ${USAGE_SUMMARY}
@@ -32,17 +32,18 @@ Usage: ${USAGE_SUMMARY}
   -d | --dry-run      Explain what will be done, but make no changes to the version, do not commit, and do not push.
   -h | --help         Print this usage guide.
 
-$(basename "${0}") prepares this repository for a version release. It performs the following tasks:
+$(basename "${0}") without options performs a patch version release. It performs the following tasks:
  - Checks to make sure the repo is clean and up to date with the origin
  - Checks to make sure the repo is clean
  - Checks that 'bump2version' is installed
  - Checks that 'gh' is installed
  - Runs 'npm run all' to make sure this Action is tested and packaged
- - Runs 'bump2version' with appropriate options
- - Cuts a GitHub release, unless '--dry-run', '--no-push', '--no-commit', or '--no-tag' were specified
+ - Runs 'bump2version patch'
+ - Commits, tags, and pushes changes to GitHub
+ - Cuts a GitHub release
 
-To release the new version of this GitHub Action to the GitHub Marketplace, visit the releases web page
-page for this repo and follow the instructions there.
+To release the new version of this GitHub Action to the GitHub Marketplace, you will need to visit the releases web
+page for this repo, and follow the instructions there.
 EOF
 }
 
@@ -50,65 +51,66 @@ function parse_args() {
   while [[ ${#} -gt 0 ]]; do
     key="${1}"
     case ${key} in
-      major|minor|patch)
-        if [[ -z "${VERSION_PART}" ]]; then
-          VERSION_PART=${1}
-        else
-          ERROR="One version part at a time, please. You tried '${VERSION_PART}' and '${1}'."
-          synopsis
-          exit 1
-        fi
-        shift
-        ;;
-      -nc|--no-commit)
-        BUMP_ARGS+=("--no-commit")
-        BUMP_ARGS+=("--no-tag")
-        TAG=false
-        PUSH=false
-        RELEASE=false
-        shift
-        ;;
-      -nt|--no-tag)
-        BUMP_ARGS+=("--no-tag")
-        TAG=false
-        RELEASE=false
-        shift
-        ;;
-      -d|--dry-run)
-        BUMP_ARGS+=("--dry-run")
-        BUMP_ARGS+=("--verbose")
-        shift
-        ;;
-      -np|--no-push)
-        PUSH=false
-        RELEASE=false
-        shift
-        ;;
-      -nr|--no-release)
-        RELEASE=false
-        shift
-        ;;
-      -h|--help)
-        help
-        exit 0
-        ;;
-      *)
-        ERROR="Unknown option: '${1}'."
+    major | minor | patch)
+      if [[ -z "${VERSION_PART}" ]]; then
+        VERSION_PART=${1}
+      else
+        ERROR="One version part at a time, please. You tried '${VERSION_PART}' and '${1}'."
         synopsis
         exit 1
-        ;;
+      fi
+      shift
+      ;;
+    -nc | --no-commit)
+      BUMP_ARGS+=("--no-commit")
+      BUMP_ARGS+=("--no-tag")
+      TAG=false
+      PUSH=false
+      RELEASE=false
+      shift
+      ;;
+    -nt | --no-tag)
+      BUMP_ARGS+=("--no-tag")
+      TAG=false
+      RELEASE=false
+      shift
+      ;;
+    -d | --dry-run)
+      BUMP_ARGS+=("--dry-run")
+      BUMP_ARGS+=("--verbose")
+      shift
+      ;;
+    -np | --no-push)
+      PUSH=false
+      RELEASE=false
+      shift
+      ;;
+    -nr | --no-release)
+      RELEASE=false
+      shift
+      ;;
+    -h | --help)
+      help
+      exit 0
+      ;;
+    *)
+      ERROR="Unknown option: '${1}'."
+      synopsis
+      exit 1
+      ;;
     esac
   done
 }
 
-function execute() {
+function planner() {
   mode=${1}
   if [[ ${mode} == "plan" ]]; then
-    echo "Congratulations. This script is about to run the following commands:"
+    echo
+    echo "Congratulations! This script is about to run the following commands:"
   elif [[ ${mode} == "run" ]]; then
     echo "Here we go!"
   else
-    >&2 echo "ERROR: This shouldn't happen"
+    echo >&2 "ERROR: This shouldn't happen"
     exit 1
   fi
 
@@ -116,7 +118,7 @@ function execute() {
   package_prep "${mode}"
   bump_version "${mode}"
   git_push "${mode}"
-#  gh_release "${mode}"
+  #  gh_release "${mode}"
 
   if [[ ${mode} == "plan" ]]; then
     echo "Check the plan above. Hit return to continue, or <ctrl>-c to bail."
@@ -125,21 +127,42 @@ function execute() {
 }
 
 function check_deps() {
-  echo "Checking dependencies..."
+  echo -n "Checking dependencies... "
   for prereq in gh bump2version; do
-    if ! command -v "${prereq}" > /dev/null; then
-      >&2 echo "ERROR: Prerequisite '${prereq}' not found."
+    if ! command -v "${prereq}" >/dev/null; then
+      echo "OH NO!"
+      echo >&2 "ERROR: Prerequisite '${prereq}' not found."
       exit 1
     fi
   done
+  echo "OK"
+}
+
+function check_repo() {
+  echo -n "Checking if repo is clean... "
+  branch=$(git branch --show-current)
+  if [[ ${branch} =~ ^(master|main|develop)$ ]]; then
+    echo "OH NO!"
+    echo " You tried to push to the master, main, or develop branches. Try this from a feature branch."
+    exit 1
+  fi
+  if output=$(git status --untracked-files=no --porcelain) && [ -z "$output" ]; then
+    # Working directory clean
+    echo "OK!"
+  else
+    # Uncommitted changes
+    echo "OH NO!"
+    echo " There are uncommitted changes in this repo."
+    echo " Please commit any staged changes before running this again:"
+    echo "${output}"
+    exit 1
+  fi
 }
 
 function git_pull() {
-  echo "Running 'git pull'..."
-  if ! git pull ; then
-    >&2 echo "ERROR: 'git pull' failed."
-    exit 1
-  fi
+  echo "Pulling any remote commits..."
+  cmd="git pull"
+  run "${cmd}" run
 }
 
 function package_prep() {
@@ -176,8 +199,8 @@ function run() {
   mode=${2}
   echo "Run: '${cmd}'"
   if [[ ${mode} == "run" ]]; then
-    if ! ${cmd} ; then
-      >&2 echo "ERROR: '${cmd}' failed."
+    if ! ${cmd}; then
+      echo >&2 "ERROR: '${cmd}' failed."
       exit 1
     fi
   fi
@@ -187,9 +210,10 @@ function run() {
 function main() {
   parse_args "$@"
   check_deps
+  check_repo
   git_pull
-  execute plan
-  execute run
+  planner plan
+  planner run
 }
 
 # Do the things
