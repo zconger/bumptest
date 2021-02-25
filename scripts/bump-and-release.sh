@@ -160,8 +160,12 @@ function check_repo() {
 }
 
 function check_version() {
-  bump_list=$(bump_version --dry-run --list)
-  echo "${bump_list}"
+  echo "Checking version info"
+  bump_list=$(bump_version run --dry-run --list)
+  CURRENT_VERSION=$(echo "${bump_list}" | grep current_version | cut -d'=' -f2)
+  NEW_VERSION=$(echo "${bump_list}" | grep new_version | cut -d'=' -f2)
+  echo " Current version:  ${CURRENT_VERSION}"
+  echo " Proposed version: ${NEW_VERSION}"
 }
 
 function git_pull() {
@@ -178,6 +182,7 @@ function package_prep() {
 
 function bump_version() {
   mode=${1}
+  shift
   cmd="bump2version ${*} ${BUMP_ARGS[*]} ${VERSION_PART}"
   run "${cmd}" "${mode}"
 }
@@ -196,7 +201,7 @@ function git_push() {
 
 function gh_release() {
   mode=${1}
-  cmd="gh release create ${BUMP_ARGS[*]} ${VERSION_PART}"
+  cmd="gh release create "
 }
 
 function run() {
