@@ -1,0 +1,67 @@
+name: "action-tests"
+on:
+  pull_request:
+  push:
+
+jobs:
+
+  unit-tests:
+    env:
+      SHAWK_API_KEY: ${{ secrets.SHAWK_API_KEY }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: npm install --only=dev
+    - run: npm run lint
+    - run: npm clean-install
+    - run: env
+    - run: npm test
+
+  # test action works running from the graph
+  max-config:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./
+      with:
+        apiKey: ${{ secrets.SHAWK_API_KEY }}
+        dryRun: true
+        environmentVariables: |
+          HOST
+          APP_ENV
+          APP_ID
+        configurationFiles: stackhawk.yml stackhawk-test.yml
+        network: bridge
+        image: zconger/hawkscan
+        version: beta
+      env:
+        ACTIONS_RUNNER_DEBUG: true
+        ACTIONS_STEP_DEBUG: true
+        HOST: localhost:5000
+        APP_ENV: ApPeNvIrOnMeNt
+
+  min-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+        with:
+          apiKey: ${{ secrets.SHAWK_API_KEY }}
+          dryRun: true
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+          ACTIONS_STEP_DEBUG: true
+          HOST: localhost:5000
+
+  live-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+        with:
+          apiKey: ${{ secrets.SHAWK_API_KEY }}
+          environmentVariables: SHAWK_RESULTS_ENDPOINT, SHAWK_AUTH_ENDPOINT
+          configurationFiles: __tests__/stackhawk.yml
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+          ACTIONS_STEP_DEBUG: true
