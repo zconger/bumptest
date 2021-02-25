@@ -215,7 +215,7 @@ function run() {
   mode=${2}
   echo "Run: '${cmd}'"
   if [[ ${mode} == "run" ]]; then
-    if ! "${cmd}"; then
+    if ! eval "${cmd}"; then
       echo >&2 "ERROR: '${cmd}' failed."
       exit 1
     fi
