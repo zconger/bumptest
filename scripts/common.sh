@@ -8,9 +8,8 @@ RELEASE=true
 USAGE_SUMMARY="$(basename "${0}") [VERSION_PART] [--no-commit] [--no-tag] [--no-push] [--dry-run] [--no-release] [--help]"
 
 function synopsis() {
-  local error=$1
-  if [[ -n "${error}" ]]; then
-    echo >&2 "${error}"
+  if [[ -n "${ERROR}" ]]; then
+    echo >&2 "${ERROR}"
   fi
   cat <<EOF
 Usage:    ${USAGE_SUMMARY}
@@ -19,9 +18,8 @@ EOF
 }
 
 function help() {
-  local error=$1
-  if [[ -n "${error}" ]]; then
-    echo >&2 "ERROR: ${error}"
+  if [[ -n "${ERROR}" ]]; then
+    echo >&2 "ERROR: ${ERROR}"
   fi
   cat <<EOF
 Usage: ${USAGE_SUMMARY}
