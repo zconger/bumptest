@@ -139,10 +139,8 @@ function check_version() {
   echo " Current version:  ${CURRENT_VERSION}"
   echo " Proposed version: ${NEW_VERSION}"
   if [[ $(git tag -l "v${NEW_VERSION}") == "v${NEW_VERSION}" ]]; then
-    echo ""
-    TAGGABLE="false"
-  else
-    TAGGABLE="true"
+    >&2 echo "ERROR: There is already a release for version ${NEW_VERSION}!"
+    exit 1
   fi
 }
 
@@ -190,6 +188,13 @@ function gh_pr() {
   run "${cmd}" "${mode}"
 }
 
+function release_information() {
+  echo
+  echo "Congratulations! Looks like your PR has been created. Once the PR has been approved and merged,"
+  echo "run the following command to draft a new release. Then follow the provided link to fill in release details."
+  echo "  gh release create v${NEW_VERSION} --title \"HawkScan Action ${NEW_VERSION}\" --notes \"\" --draft"
+}
+
 function run() {
   local cmd=${1}
   local mode=${2}
@@ -211,6 +216,7 @@ function main() {
   check_version
   planner plan
   planner run
+  release_information
 }
 
 # Do the things
