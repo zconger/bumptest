@@ -136,8 +136,8 @@ function check_version() {
     echo " Current version:  ${CURRENT_VERSION}"
     echo " Proposed version: ${NEW_VERSION}"
   else
-    version=$(jq .version -r < package.json)
-    echo "INFO: Current version is ${version}. Version will not be updated."
+    CURRENT_VERSION=$(jq .version -r < package.json)
+    echo "INFO: Current version is ${CURRENT_VERSION}. Version will not be updated."
   fi
 }
 
@@ -158,7 +158,8 @@ function bump_version() {
   if [[ -n $PART ]]; then
     cmd="bump2version ${*} ${PART}"
     run "${cmd}" "${mode}"
-  fi
+  else
+    echo "INFO: Current version is ${CURRENT_VERSION}. Version will not be updated."
 }
 
 function git_commit() {
@@ -204,8 +205,3 @@ function main() {
 
 # Do the things
 main "$@"
-
- - Bumps the NPM version if specified. This is required before creating a new GitHub release (and release to Marketplace)
- - Runs 'npm run all' to make sure this Action is tested and packaged
- - Commits and pushes changes to GitHub
- - Creates a PR
