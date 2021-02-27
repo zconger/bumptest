@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Source common variables and functions
-. ./scripts/common.sh
+#. ./scripts/common.sh
 
 # Declare variables
 BASE=main
@@ -21,9 +21,9 @@ Usage: ${USAGE_SUMMARY}
   -d | --dry-run     Explain what will be done, but make no changes, do not commit, do not push, and do not create a PR.
   -h | --help        Print this usage guide.
 
-$(basename "${0}") commits all changes and creates a PR. It performs the following tasks:
- - Bumps the NPM version if specified. This is required before creating a new GitHub release (and release to Marketplace)
- - Runs 'npm run all' to make sure this Action is tested and packaged
+This script will package up the GitHub Action in this repo and submit a PR for it.
+ - Bumps the NPM version if specified. This is required before creating a new release for the GitHub Marketplace
+ - Packages the Action and all dependencies and licenses to the ./dist directory
  - Commits and pushes changes to GitHub
  - Creates a PR
 
