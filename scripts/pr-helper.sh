@@ -163,7 +163,7 @@ function bump_version() {
 
 function git_commit() {
   local mode=${1}
-  local cmd="git commit -m \"${MSG}\""
+  local cmd="git commit -m \"${MSG}\" --allow-empty"
   run "${cmd}" "${mode}"
 }
 
