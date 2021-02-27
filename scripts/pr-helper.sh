@@ -98,7 +98,7 @@ function check_deps() {
   echo -n "Checking dependencies... "
   for prereq in gh bump2version jq; do
     if ! command -v "${prereq}" >/dev/null; then
-      echo "OH NO!"
+      echo "Not OK!"
       echo >&2 "ERROR: Prerequisite '${prereq}' not found."
       exit 1
     fi
@@ -137,13 +137,21 @@ function check_version() {
     echo " Proposed version: ${NEW_VERSION}"
   else
     CURRENT_VERSION=$(jq .version -r < package.json)
-    echo "INFO: Current version is ${CURRENT_VERSION}. Version will not be updated."
+    NEW_VERSION=${CURRENT_VERSION}
+    echo "INFO: Version will not be updated. Current version is ${CURRENT_VERSION}."
+  fi
+  if [[ $(git tag -l "v${NEW_VERSION}") == "v${NEW_VERSION}" ]]; then
+    echo ""
+    TAGGABLE="false"
+  else
+    TAGGABLE="true"
   fi
 }
 
 function git_pull() {
   echo "Pulling any remote commits..."
   run "git pull" run
+  run "git pull --tags" run
 }
 
 function package_prep() {
@@ -159,7 +167,8 @@ function bump_version() {
     cmd="bump2version ${*} ${PART}"
     run "${cmd}" "${mode}"
   else
-    echo "INFO: Current version is ${CURRENT_VERSION}. Version will not be updated."
+    echo "🟡 Current version is ${CURRENT_VERSION}, and version bump was not selected."
+  fi
 }
 
 function git_commit() {
