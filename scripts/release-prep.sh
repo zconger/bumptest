@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
-# Source common variables and functions
-#. ./scripts/common.sh
-
 # Declare variables
 BASE=main
-USAGE_SUMMARY="$(basename "${0}") --bump PART [--dry-run] [--help] [--base BRANCH] [--commit MSG] [--pr TITLE]"
+USAGE_SUMMARY="$(basename "${0}") --bump PART [--base BRANCH] [--commit MSG] [--pr TITLE] [--help]"
 
 function help() {
   local error=$1
@@ -18,7 +15,6 @@ Usage: ${USAGE_SUMMARY}
   -B | --base BASE   Target the BASE branch instead of 'main'. [Default: main]
   -c | --commit MSG  Commit message. [Default: "prepare for pull request to BASE"]
   -p | --pr TITLE    PR title. [Default: "Bump version: CURRENT_VERSION → NEW_VERSION"]
-  -d | --dry-run     Explain what will be done, but make no changes, do not commit, do not push, and do not create a PR.
   -h | --help        Print this usage guide.
 
 This script will take the following actions to prepare this GitHub Action for release to the GitHub Marketplace
@@ -48,9 +44,6 @@ function parse_args() {
     -c | --commit)
       MSG=${2}
       shift 2;;
-    -d | --dry-run)
-      DRY_RUN="true"
-      shift;;
     -h | --help)
       help
       exit 0
@@ -159,12 +152,8 @@ function package_prep() {
 function bump_version() {
   local mode=${1}
   shift
-  if [[ -n $PART ]]; then
-    cmd="bump2version ${*} ${PART}"
-    run "${cmd}" "${mode}"
-  else
-    echo "🟡 Current version is ${CURRENT_VERSION}, and version bump was not selected."
-  fi
+  cmd="bump2version ${*} ${PART}"
+  run "${cmd}" "${mode}"
 }
 
 function git_commit() {
