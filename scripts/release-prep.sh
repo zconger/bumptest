@@ -5,7 +5,7 @@
 
 # Declare variables
 BASE=main
-USAGE_SUMMARY="$(basename "${0}") [--bump PART] [--dry-run] [--help] [--base BRANCH] [--commit MSG]"
+USAGE_SUMMARY="$(basename "${0}") --bump PART [--dry-run] [--help] [--base BRANCH] [--commit MSG] [--pr TITLE]"
 
 function help() {
   local error=$1
@@ -14,21 +14,19 @@ function help() {
   fi
   cat <<EOF
 Usage: ${USAGE_SUMMARY}
-  -b | --bump PART   Bump the version before creating a PR. PART must be one of 'major', 'minor', or 'patch'.
-                     Do this if you plan to create a new version release and release to GitHub Marketplace!
+  -b | --bump PART   REQUIRED: Bump the version before creating a PR. PART must be one of 'major', 'minor', or 'patch'.
   -B | --base BASE   Target the BASE branch instead of 'main'. [Default: main]
   -c | --commit MSG  Commit message. [Default: "prepare for pull request to BASE"]
+  -p | --pr TITLE    PR title. [Default: "Bump version: CURRENT_VERSION → NEW_VERSION"]
   -d | --dry-run     Explain what will be done, but make no changes, do not commit, do not push, and do not create a PR.
   -h | --help        Print this usage guide.
 
-This script will package up the GitHub Action in this repo and submit a PR for it.
- - Bumps the NPM version if specified. This is required before creating a new release for the GitHub Marketplace
- - Packages the Action and all dependencies and licenses to the ./dist directory
- - Commits and pushes changes to GitHub
- - Creates a PR
-
-To release the new version of this GitHub Action to the GitHub Marketplace, you will need to visit the releases web
-page for this repo, and follow the instructions there.
+This script will take the following actions to prepare this GitHub Action for release to the GitHub Marketplace
+ - Bump the NPM version as specified.
+ - Package the Action and all dependencies and licenses to the ./dist directory
+ - Commit and push changes to GitHub
+ - Create a PR
+ - Explain how to tag and release once the PR is merged
 EOF
 }
 
@@ -39,7 +37,7 @@ function parse_args() {
     -b | --bump)
       PART=${2}
       if [[ ! ${PART} =~ (major|minor|patch) ]]; then
-        ERROR="The only valid options for --bump are major, minor, or patch"
+        ERROR="The only valid options for '--bump' are major, minor, or patch"
         help "${ERROR}"
         exit 1
       fi
@@ -59,13 +57,19 @@ function parse_args() {
       ;;
     *)
       ERROR="Unknown option: '${1}'."
-      synopsis "${ERROR}"
+      help "${ERROR}"
       exit 1
       ;;
     esac
   done
+
   if [[ -z $MSG ]]; then
     MSG="prepare for pull request to ${BASE}"
+  fi
+  if [[ -z $PART ]]; then
+    ERROR="Missing required option '--bump PART'"
+    help "${ERROR}"
+    exit 1
   fi
 }
 
@@ -98,7 +102,7 @@ function check_deps() {
   echo -n "Checking dependencies... "
   for prereq in gh bump2version jq; do
     if ! command -v "${prereq}" >/dev/null; then
-      echo "OH NO!"
+      echo "Not OK!"
       echo >&2 "ERROR: Prerequisite '${prereq}' not found."
       exit 1
     fi
@@ -128,22 +132,24 @@ function check_repo() {
 }
 
 function check_version() {
-  if [[ -n $PART ]]; then
-    echo "Checking version info"
-    bump_list=$(bump_version run --dry-run --list)
-    CURRENT_VERSION=$(echo "${bump_list}" | grep current_version | cut -d'=' -f2)
-    NEW_VERSION=$(echo "${bump_list}" | grep new_version | cut -d'=' -f2)
-    echo " Current version:  ${CURRENT_VERSION}"
-    echo " Proposed version: ${NEW_VERSION}"
+  echo "Checking version info"
+  bump_list=$(bump_version run --dry-run --list)
+  CURRENT_VERSION=$(echo "${bump_list}" | grep current_version | cut -d'=' -f2)
+  NEW_VERSION=$(echo "${bump_list}" | grep new_version | cut -d'=' -f2)
+  echo " Current version:  ${CURRENT_VERSION}"
+  echo " Proposed version: ${NEW_VERSION}"
+  if [[ $(git tag -l "v${NEW_VERSION}") == "v${NEW_VERSION}" ]]; then
+    echo ""
+    TAGGABLE="false"
   else
-    version=$(jq .version -r < package.json)
-    echo "INFO: Current version is ${version}. Version will not be updated."
+    TAGGABLE="true"
   fi
 }
 
 function git_pull() {
   echo "Pulling any remote commits..."
   run "git pull" run
+  run "git pull --tags" run
 }
 
 function package_prep() {
@@ -158,6 +164,8 @@ function bump_version() {
   if [[ -n $PART ]]; then
     cmd="bump2version ${*} ${PART}"
     run "${cmd}" "${mode}"
+  else
+    echo "🟡 Current version is ${CURRENT_VERSION}, and version bump was not selected."
   fi
 }
 
@@ -175,7 +183,10 @@ function git_push() {
 # add --no-pr
 function gh_pr() {
   local mode=${1}
-  local cmd="gh pr create --web --base ${BASE} --title \"${MSG}\""
+  if [[ -z $TITLE ]]; then
+    TITLE="Bump version: ${CURRENT_VERSION} → ${NEW_VERSION}"
+  fi
+  local cmd="gh pr create --web --base ${BASE} --title \"${TITLE}\""
   run "${cmd}" "${mode}"
 }
 
@@ -204,8 +215,3 @@ function main() {
 
 # Do the things
 main "$@"
-
- - Bumps the NPM version if specified. This is required before creating a new GitHub release (and release to Marketplace)
- - Runs 'npm run all' to make sure this Action is tested and packaged
- - Commits and pushes changes to GitHub
- - Creates a PR
