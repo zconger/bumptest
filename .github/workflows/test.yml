@@ -74,6 +74,7 @@ jobs:
       - min-config
       - max-config
     steps:
+      - uses: actions/checkout@v2
       - name: Check Release Version
         run: |
           export RELEASE_VERSION=$(./scripts/version-check.sh)
