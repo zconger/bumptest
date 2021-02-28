@@ -75,8 +75,11 @@ jobs:
       - max-config
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Check Release Version
-        run: echo "RELEASE_VERSION=$(./scripts/version-check.sh)" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=$(./scripts/version-check.sh)" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         if: env.RELEASE_VERSION != ''
