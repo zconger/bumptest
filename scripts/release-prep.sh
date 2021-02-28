@@ -182,7 +182,7 @@ function release_information() {
   echo
   echo "Yay! Once this PR has been approved and built, it will automatically be released as v${NEW_VERSION}."
   echo "You may need to edit this release to publish it to the GitHub Marketplace. Check it out at:"
-  echo "  ${REPO_URL}/releases/tag/v${NEW_RELEASE}"
+  echo "  ${REPO_URL}/releases/tag/v${NEW_VERSION}"
 }
 
 function run() {
