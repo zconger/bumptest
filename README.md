@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: throwaway/throwaway-action@v2.1.1
+    - uses: throwaway/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
 ```
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: awaythrow/throwaway-action@v2.1.1
+    - uses: awaythrow/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
         dryRun: true
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: awaythrow/throwaway-action@v2.1.1
+    - uses: awaythrow/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
         environmentVariables: APP_HOST APP_ENV
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: awaythrow/throwaway-action@v2.1.1
+    - uses: awaythrow/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
         configurationFiles: awaythrow.yml awaythrow-extra.yml
@@ -100,7 +100,7 @@ jobs:
         pip3 install -r requirements.txt
         nohup python3 app.py &
     - name: Scan my app
-      uses: awaythrow/throwaway-action@v2.1.1
+      uses: awaythrow/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
 ```
@@ -124,7 +124,7 @@ jobs:
         APP_HOST: 'http://localhost:5000'
         APP_ID: AE624DB7-11FC-4561-B8F2-2C8ECF77C2C7
         APP_ENV: Development
-      uses: awaythrow/throwaway-action@v2.1.1
+      uses: awaythrow/throwaway-action@v2.1.2
       with:
         apiKey: ${{ secrets.HAWK_API_KEY }}
         dryRun: true
