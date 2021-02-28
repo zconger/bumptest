@@ -4,7 +4,7 @@
 # it returns the .bumpversion current version number. Otherwise it prints an error message to std-err and returns
 # nothing to std-out.
 
-RELEASE_VERSION=$(grep "^current_version" .bumpversion.cfg | egrep -o '\d+\.\d+\.\d+')
+RELEASE_VERSION=$(grep "^current_version" ./.bumpversion.cfg | egrep -o '\d+\.\d+\.\d+')
 
 if [[ -z "${RELEASE_VERSION}" ]]; then
   >&2 echo "No valid version number found."
