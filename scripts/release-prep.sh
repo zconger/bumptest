@@ -179,9 +179,8 @@ function gh_pr() {
 
 function release_information() {
   echo
-  echo "Congratulations! Looks like your PR has been created. Once the PR has been approved and merged,"
-  echo "run the following command to draft a new release. Then follow the provided link to fill in release details."
-  echo "  gh release create v${NEW_VERSION} --title \"HawkScan Action ${NEW_VERSION}\" --notes \"\" --draft"
+  echo "Once this PR has been approved and built, edit the GitHub Release, and publish to the GitHub Actions Marketplace:"
+  echo "  gh release view --web v${NEW_VERSION}"
 }
 
 function run() {
