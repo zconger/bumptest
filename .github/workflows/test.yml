@@ -65,3 +65,25 @@ jobs:
 #        env:
 #          ACTIONS_RUNNER_DEBUG: true
 #          ACTIONS_STEP_DEBUG: true
+
+  release-me-maybe:
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs:
+      - unit-tests
+      - min-config
+      - max-config
+    steps:
+      - name: Check Release Version
+        run: |
+          export RELEASE_VERSION=$(./scripts/version-check.sh)
+          echo "::set-env name=RELEASE_VERSION::$RELEASE_VERSION"
+      - name: Create Release
+        id: create_release
+        if: env.RELEASE_VERSION != ''
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          release_name: HawkScan Action ${{ env.RELEASE_VERSION }}
