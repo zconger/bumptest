@@ -3,6 +3,7 @@
 # Declare variables
 BASE=main
 USAGE_SUMMARY="$(basename "${0}") --bump PART [--base BASE] [--commit MSG] [--pr TITLE] [--help]"
+REPO_URL="https://github.com/zconger/bumptest"
 
 function help() {
   local error=$1
@@ -179,8 +180,9 @@ function gh_pr() {
 
 function release_information() {
   echo
-  echo "Once this PR has been approved and built, edit the GitHub Release, and publish to the GitHub Actions Marketplace:"
-  echo "  gh release view --web v${NEW_VERSION}"
+  echo "Yay! Once this PR has been approved and built, it will automatically be released as v${NEW_VERSION}."
+  echo "You may need to edit this release to publish it to the GitHub Marketplace. Check it out at:"
+  echo "  ${REPO_URL}/releases/tag/v${NEW_RELEASE}"
 }
 
 function run() {
