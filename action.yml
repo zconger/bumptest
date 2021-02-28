@@ -1,5 +1,5 @@
-name: 'StackHawk HawkScan Action'
-description: 'Find security bugs in your application with HawkScan DAST'
+name: 'Throwaway Test Action'
+description: 'Just goofin'
 author: 'Zachary Conger'
 
 inputs:
