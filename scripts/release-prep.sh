@@ -2,7 +2,7 @@
 
 # Declare variables
 BASE=main
-USAGE_SUMMARY="$(basename "${0}") --bump PART [--base BRANCH] [--commit MSG] [--pr TITLE] [--help]"
+USAGE_SUMMARY="$(basename "${0}") --bump PART [--base BASE] [--commit MSG] [--pr TITLE] [--help]"
 
 function help() {
   local error=$1
